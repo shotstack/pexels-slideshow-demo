@@ -1,7 +1,7 @@
 {
-  "name": "demo-pexels-shotstack",
+  "name": "image-demo-pexels-shotstack",
   "version": "1.0.0",
-  "description": "Shotstack demo using Pixels Video API and Serverless",
+  "description": "Shotstack demo using Pixels API and Serverless",
   "main": "index.js",
   "dependencies": {
     "@hapi/joi": "^15.0.3",
@@ -9,13 +9,15 @@
     "request": "^2.88.0"
   },
   "devDependencies": {
+    "nodemon": "^2.0.7",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "serverless-dotenv-plugin": "^1.2.1"
   },
   "scripts": {
     "deploy": "sls deploy",
-    "start": "node src/app.js"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
   },
   "author": "Shotstack",
   "license": "ISC"

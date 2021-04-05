@@ -27,17 +27,17 @@ module.exports.submit = (data) => {
         }
 
         const minClips = 4;
-        const maxClips = 8;
-        const clipLength = 2;
-        const videoStart = 4;
+        const maxClips = 15;
+        const clipLength = 1;
+        const titleLength = 4;
 
-        pexelsClient.searchVideos(data.search, maxClips, 1).then(function(pexels) {
+        pexelsClient.search(data.search, maxClips, 1).then(function(pexels) {
             if (pexels.total_results < minClips) {
-                throw "There are not enough clips for '" + data.search + "' to create a video";
+                throw "There are not enough images for '" + data.search + "' to create a video";
             }
 
             let tracks = [];
-            let videos = [];
+            let images = [];
 
             let title = {
                 asset: {
@@ -47,7 +47,7 @@ module.exports.submit = (data) => {
                     size: "small"
                 },
                 start: 0,
-                length: 4,
+                length: titleLength,
                 effect: "zoomIn",
                 transition: {
                     in: "fade",
@@ -55,28 +55,26 @@ module.exports.submit = (data) => {
                 }
             };
 
-            for (let [index, video] of pexels.videos.entries()) {
-                let videoFiles = video.video_files;
-                let hdVideo = videoFiles.find(file => file.height === 720 || file.height === 1920) || videoFiles[0];
+            for (let [index, image] of pexels.photos.entries()) {
+                let imageSrc = image.src.original;
 
-                videos[index] = {
+                images[index] = {
                     asset: {
-                        type: "video",
-                        src: hdVideo.link,
-                        trim: 1
+                        type: "image",
+                        src: imageSrc
                     },
-                    start: videoStart + (index * clipLength),
+                    start: titleLength + (index * clipLength),
                     length: clipLength
                 };
 
                 if (index === 0) {
-                    videos[index].transition = {
+                    images[index].transition = {
                         in: "fade"
                     }
                 }
 
                 if (index === (maxClips - 1)) {
-                    videos[index].transition = {
+                    images[index].transition = {
                         out: "fade"
                     }
                 }
@@ -89,7 +87,7 @@ module.exports.submit = (data) => {
             };
 
             tracks[1] = {
-                clips: videos
+                clips: images
             };
 
             let timeline = {

@@ -11,6 +11,10 @@
     padding-bottom: 16px;
 }
 
+video {
+    margin-bottom: 0 !important;
+}
+
 #player, #json {
     display: none;
 }
