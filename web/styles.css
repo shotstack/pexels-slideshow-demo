@@ -1,0 +1,77 @@
+.content .jumbotron {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    margin-bottom: 0;
+}
+.display-4 {
+    font-size: 2.5rem;
+}
+
+.video-container {
+    padding-bottom: 16px;
+}
+
+#player, #json {
+    display: none;
+}
+
+#status .fas {
+    margin-bottom: 8px;
+}
+
+#status small {
+    margin-top: 10px;
+    color: #777777;
+}
+
+.progress {
+    height: 2px;
+    margin-bottom: 14px;
+}
+
+#json {
+    margin-top: 16px;
+}
+.json-key {
+    color: brown;
+}
+.json-value {
+    color: navy;
+}
+.json-string {
+    color: olive;
+}
+
+header {
+    margin-bottom: 2rem;
+}
+
+.btn-primary {
+    font-weight: bold;
+    background-color: #25d3d0;
+    border-color: #25d3d0;
+}
+
+.btn-primary:hover, .btn-primary:active {
+    background-color: #25d3d0;
+    border-color: #25d3d0;
+}
+
+a {
+    color: #25d3d0;
+}
+a:hover {
+    color: #25d3d0;
+}
+
+.video-container .jumbotron {
+    background-color: transparent;
+}
+
+#instructions, #status {
+    margin-top: 7rem;
+}
+
+#instructions p {
+    margin: 0;
+}

@@ -1,0 +1,42 @@
+service: demo-pexels-shotstack
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: demo
+  region: ap-southeast-2
+  environment:
+    PEXELS_API_KEY: ${env:PEXELS_API_KEY}
+
+package:
+  exclude:
+    - .env
+    - .env.dist
+    - package.json
+    - package-lock.json
+    - src/app.js
+
+functions:
+  shotstack:
+    handler: src/handler/shotstack/handler.submit
+    description: Demo - Pexels video search and render
+    timeout: 15
+    memorySize: 128
+    events:
+      - http:
+          path: shotstack
+          method: post
+          cors: true
+  status:
+    handler: src/handler/shotstack/handler.status
+    description: Demo - Pexels video status check
+    timeout: 10
+    memorySize: 128
+    events:
+      - http:
+          path: shotstack/{id}
+          method: get
+          cors: true
+
+plugins:
+  - serverless-dotenv-plugin
