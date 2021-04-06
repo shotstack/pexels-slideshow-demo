@@ -8,6 +8,19 @@ const shotstackUrl = process.env.SHOTSTACK_HOST;
 const shotstackApiKey = process.env.SHOTSTACK_API_KEY;
 const shotstackAssetsUrl = process.env.SHOTSTACK_ASSETS_URL;
 
+const LUMA_ASSETS = [
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/circles/center-double-invert.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/circles/center-double.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/circles/center-small-to-large.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/circles/circle-half-left.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/circles/circle-half-right.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/circles/enter-large-to-small.mp4"
+];
+
+const EFFECTS = [
+    "zoomIn", "slideUp", "slideLeft", "zoomOut", "slideDown", "slideRight"
+]
+
 const pexelsClient = pexels.createClient(process.env.PEXELS_API_KEY);
 
 module.exports.submit = (data) => {
@@ -30,69 +43,73 @@ module.exports.submit = (data) => {
         }
 
         const minClips = 4;
-        const maxClips = 15;
-        const clipLength = 1;
-        const titleLength = 4;
+        const maxClips = 6;
+        const clipLength = 4;
+        const titleLength = 3;
         
-        pexelsClient.photos.search({query: data.search, orientation:'landscape'}).then(function(pexels) {
-            if (pexels.total_results < minClips) {
+        pexelsClient.photos.search({query: data.search, per_page: maxClips, orientation:'landscape'}).then(responce => {
+            if (responce.total_results < minClips) {
                 throw "There are not enough images for '" + data.search + "' to create a video";
             }
-            let tracks = [];
-            let images = [];
-
-            let title = {
-                asset: {
-                    type: "title",
-                    text: data.title,
-                    style: "chunk",
-                    size: "small"
-                },
-                start: 0,
-                length: titleLength - 1,
-                effect: "zoomIn",
-                transition: {
-                    in: "fade",
-                    out: "fade"
-                }
+            const images = responce.photos.entries();
+            const tracks = [];
+            
+            const title = {
+                clips: [
+                    {
+                        asset: {
+                            type: "title",
+                            text: data.title,
+                            style: "chunk",
+                            size: "small"
+                        },
+                        start: 0,
+                        length: titleLength,
+                        effect: "zoomIn",
+                        transition: {
+                            in: "fade",
+                            out: "fade"
+                        }
+                    }
+                ]
             };
 
-            for (let [index, image] of pexels.photos.entries()) {
-                let imageSrc = image.src.original;
+            tracks.push(title);
 
-                images[index] = {
+            for (const [index, image] of images) {
+                const imageSrc = image.src.original;
+                const imageAsset = {
                     asset: {
                         type: "image",
                         src: imageSrc
                     },
                     start: titleLength + (index * clipLength),
                     length: clipLength,
-                };
-
-                if (index === 0) {
-                    images[index].transition = {
-                        in: "fade"
-                    }
+                    effect: EFFECTS[index%EFFECTS.length]
                 }
-
-                if (index === (maxClips - 1)) {
-                    images[index].transition = {
+                
+                if (index === (maxClips - 1)) {           
+                    imageAsset.transition = {
                         out: "fade"
                     }
                 }
+                
+                tracks.push({
+                    clips: [
+                        imageAsset,
+                        {
+                            asset: {
+                                type: "luma",
+                                src: LUMA_ASSETS[index%LUMA_ASSETS.length],
+                            },
+                            start: titleLength + (index * clipLength) + clipLength - 2,
+                            length: 2
+                        }
+                    ]
+                });
             }
 
-            tracks[0] = {
-                clips: [
-                    title
-                ]
-            };
-
-            tracks[1] = {
-                clips: images
-            };
-
-            let timeline = {
+            const timeline = {
                 soundtrack: {
                     src: shotstackAssetsUrl + "music/" + data.soundtrack + ".mp3",
                     effect: "fadeOut"
