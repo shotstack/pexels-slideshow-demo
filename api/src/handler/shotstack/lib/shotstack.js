@@ -3,16 +3,18 @@
 const request = require('request');
 const Joi = require('@hapi/joi');
 const PexelsAPI = require('pexels-api-wrapper');
-const pexelsClient = new PexelsAPI(process.env.PEXELS_API_KEY);
+const pexels = require('pexels');
 const shotstackUrl = process.env.SHOTSTACK_HOST;
 const shotstackApiKey = process.env.SHOTSTACK_API_KEY;
 const shotstackAssetsUrl = process.env.SHOTSTACK_ASSETS_URL;
+
+const pexelsClient = pexels.createClient(process.env.PEXELS_API_KEY);
 
 module.exports.submit = (data) => {
     const schema = {
         search: Joi.string().regex(/^[a-zA-Z0-9 ]*$/).min(2).max(30).required(),
         title: Joi.string().regex(/^[a-zA-Z0-9 ]*$/).min(2).max(30).required(),
-        soundtrack: Joi.string().valid(['disco', 'freeflow', 'melodic']).required(),
+        soundtrack: Joi.string().valid(['disco', 'freeflow', 'melodic', 'lit', 'ambisax', 'palmtrees']).required(),
     };
 
     const valid = Joi.validate({
@@ -21,6 +23,7 @@ module.exports.submit = (data) => {
         title: data.title
     }, schema);
 
+   
     return new Promise((resolve, reject) => {
         if (valid.error) {
             return reject(valid.error);
@@ -30,12 +33,11 @@ module.exports.submit = (data) => {
         const maxClips = 15;
         const clipLength = 1;
         const titleLength = 4;
-
-        pexelsClient.search(data.search, maxClips, 1).then(function(pexels) {
+        
+        pexelsClient.photos.search({query: data.search, orientation:'landscape'}).then(function(pexels) {
             if (pexels.total_results < minClips) {
                 throw "There are not enough images for '" + data.search + "' to create a video";
             }
-
             let tracks = [];
             let images = [];
 
@@ -43,11 +45,11 @@ module.exports.submit = (data) => {
                 asset: {
                     type: "title",
                     text: data.title,
-                    style: "minimal",
+                    style: "chunk",
                     size: "small"
                 },
                 start: 0,
-                length: titleLength,
+                length: titleLength - 1,
                 effect: "zoomIn",
                 transition: {
                     in: "fade",
@@ -64,7 +66,7 @@ module.exports.submit = (data) => {
                         src: imageSrc
                     },
                     start: titleLength + (index * clipLength),
-                    length: clipLength
+                    length: clipLength,
                 };
 
                 if (index === 0) {
