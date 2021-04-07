@@ -16,6 +16,7 @@ const SOUNDTRACKS = {
 
 const LUMA_ASSETS = [
     "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/melts/melting-center.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/melts/melting-center-flipped.mp4"
 ];
 
 const EFFECTS = [
@@ -42,18 +43,23 @@ module.exports.submit = (data) => {
         if (valid.error) {
             return reject(valid.error);
         }
-
+        const askFromPexels = 50;
         const minClips = 4;
         const maxClips = 6;
         const clipLength = 4;
         const lumaLength = 2;
         const titleLength = 3;
         
-        pexelsClient.photos.search({query: data.search, per_page: maxClips, orientation:'landscape'}).then(responce => {
+        pexelsClient.photos.search({query: data.search, per_page: askFromPexels, orientation:'landscape'}).then(responce => {
             if (responce.total_results < minClips) {
                 throw "There are not enough images for '" + data.search + "' to create a video";
             }
-            const images = responce.photos.entries();
+            
+            const images = [];
+            for (let i=0; i < maxClips; i++) {
+                images.push(responce.photos[Math.floor(Math.random() * responce.photos.length)])
+            }
+            
             const tracks = [];
             
             const title = {
@@ -77,9 +83,10 @@ module.exports.submit = (data) => {
             };
 
             tracks.push(title);
-
-            for (const [index, image] of images) {
+                
+            images.map((image, index) => {
                 const imageSrc = image.src.original;
+                const isFirstClip = index === 0;
                 const isLastClip = index === (maxClips - 1);
                 const newClipStartTime = titleLength + (index * clipLength) - index * lumaLength;
                 const imageAsset = {
@@ -91,22 +98,21 @@ module.exports.submit = (data) => {
                     length: clipLength,
                     effect: EFFECTS[index%EFFECTS.length]
                 }
-            
-                if (index === 0) {
+                const clips = [imageAsset];
+
+                if (isFirstClip) {
                     imageAsset.transition = {
                         in: "fade"
                     }
                 }
-                
-                if (isLastClip) {           
+
+                if (isLastClip) {   
+                    imageAsset.length = clipLength - lumaLength;       
                     imageAsset.transition = {
                         out: "fade"
                     }
                 }
-
-                const clips = [imageAsset];
-
-                if (!isLastClip) {
+                else {
                     const lumaAsset =  {
                         asset: {
                             type: "luma",
@@ -119,7 +125,7 @@ module.exports.submit = (data) => {
                 }
                 
                 tracks.push({clips});
-            }
+            })
 
             const timeline = {
                 soundtrack: {
