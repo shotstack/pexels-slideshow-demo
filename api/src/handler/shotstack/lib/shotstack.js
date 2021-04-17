@@ -2,11 +2,9 @@
 
 const request = require('request');
 const Joi = require('@hapi/joi');
-const PexelsAPI = require('pexels-api-wrapper');
 const pexels = require('pexels');
 const shotstackUrl = process.env.SHOTSTACK_HOST;
 const shotstackApiKey = process.env.SHOTSTACK_API_KEY;
-const shotstackAssetsUrl = process.env.SHOTSTACK_ASSETS_URL;
 
 const SOUNDTRACKS = {
     palmtrees: "https://feeds.soundcloud.com/stream/499015833-unminus-palmtrees.mp3",
@@ -15,8 +13,10 @@ const SOUNDTRACKS = {
 }
 
 const LUMA_ASSETS = [
-    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/melts/melting-center.mp4",
-    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/melts/melting-center-flipped.mp4"
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/brush-strokes/brush-strokes-left-fast.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/brush-strokes/brush-strokes-right-fast.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/brush-strokes/brush-strokes-left-flip-fast.mp4",
+    "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/luma-mattes/brush-strokes/brush-strokes-right-flip-fast.mp4",
 ];
 
 const EFFECTS = [
@@ -27,7 +27,7 @@ const pexelsClient = pexels.createClient(process.env.PEXELS_API_KEY);
 
 module.exports.submit = (data) => {
     const schema = {
-        search: Joi.string().regex(/^[a-zA-Z0-9 ]*$/).min(2).max(30).required(),
+        search: Joi.string().regex(/^[a-zA-Z0-9 ]*$/).min(2).max(20).required(),
         title: Joi.string().regex(/^[a-zA-Z0-9 ]*$/).min(2).max(30).required(),
         soundtrack: Joi.string().valid(['disco', 'freeflow', 'melodic', 'lit', 'ambisax', 'palmtrees']).required(),
     };
@@ -43,23 +43,26 @@ module.exports.submit = (data) => {
         if (valid.error) {
             return reject(valid.error);
         }
-        const askFromPexels = 50;
+
+        const maxResults = 20;
         const minClips = 4;
-        const maxClips = 6;
-        const clipLength = 4;
+        const maxClips = 8;
+        const clipLength = 7;
         const lumaLength = 2;
-        const titleLength = 3;
+        const titleLength = 6;
         
-        pexelsClient.photos.search({query: data.search, per_page: askFromPexels, orientation:'landscape'}).then(responce => {
-            if (responce.total_results < minClips) {
+        pexelsClient.photos.search({query: data.search, per_page: maxResults, orientation:'landscape'}).then(response => {
+            if (response.total_results < minClips) {
                 throw "There are not enough images for '" + data.search + "' to create a video";
             }
             
             const images = [];
             for (let i=0; i < maxClips; i++) {
-                images.push(responce.photos[Math.floor(Math.random() * responce.photos.length)])
+                const randomIndex = Math.floor(Math.random() * response.photos.length);
+                images.push(response.photos[randomIndex]);
+                response.photos.splice(randomIndex, 1);
             }
-            
+
             const tracks = [];
             
             const title = {
@@ -67,16 +70,15 @@ module.exports.submit = (data) => {
                     {
                         asset: {
                             type: "title",
-                            text: data.title,
+                            text: data.title.toUpperCase(),
                             style: "chunk",
-                            size: "small"
+                            size: "x-large"
                         },
                         start: 0,
                         length: titleLength,
-                        effect: "zoomIn",
                         transition: {
-                            in: "fade",
-                            out: "fade"
+                            in: "slideUp",
+                            out: "slideDown"
                         }
                     }
                 ]
@@ -88,7 +90,7 @@ module.exports.submit = (data) => {
                 const imageSrc = image.src.original;
                 const isFirstClip = index === 0;
                 const isLastClip = index === (maxClips - 1);
-                const newClipStartTime = titleLength + (index * clipLength) - index * lumaLength;
+                const newClipStartTime = (index * clipLength) - index * lumaLength;
                 const imageAsset = {
                     asset: {
                         type: "image",
@@ -96,7 +98,7 @@ module.exports.submit = (data) => {
                     },
                     start: newClipStartTime,
                     length: clipLength,
-                    effect: EFFECTS[index%EFFECTS.length]
+                    effect: EFFECTS[index % EFFECTS.length]
                 }
                 const clips = [imageAsset];
 
@@ -116,7 +118,7 @@ module.exports.submit = (data) => {
                     const lumaAsset =  {
                         asset: {
                             type: "luma",
-                            src: LUMA_ASSETS[index%LUMA_ASSETS.length],
+                            src: LUMA_ASSETS[index % LUMA_ASSETS.length],
                         },
                         start: newClipStartTime + clipLength - lumaLength,
                         length: lumaLength
