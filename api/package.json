@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "@hapi/joi": "^15.0.3",
+    "dotenv": "^8.2.0",
     "pexels": "^1.0.1",
     "request": "^2.88.0"
   },
