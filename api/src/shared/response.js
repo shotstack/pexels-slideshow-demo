@@ -28,7 +28,7 @@ module.exports.getBody = (status, message, data) => {
  */
 module.exports.format = (code, status, message, data) => {
     return {
-        statusCode: parseInt(code),
+        statusCode: code,
         headers: {
             'Access-Control-Allow-Origin' : '*'
         },
