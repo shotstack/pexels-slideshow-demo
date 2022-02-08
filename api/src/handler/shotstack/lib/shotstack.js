@@ -86,7 +86,7 @@ module.exports.submit = (data) => {
 
             tracks.push(title);
                 
-            images.map((image, index) => {
+            images.forEach((image, index) => {
                 const imageSrc = image.src.original;
                 const isFirstClip = index === 0;
                 const isLastClip = index === (maxClips - 1);
